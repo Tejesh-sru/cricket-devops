@@ -1,0 +1,109 @@
+name: CI/CD — Docker Compose Build & Push
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build images with Docker Compose
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          docker compose -f docker-compose.ci.yml build --parallel
+
+      - name: Start services
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          docker compose -f docker-compose.ci.yml up -d
+
+      - name: Wait for backend to become healthy
+        run: |
+          echo "Waiting for backend (http://localhost:5000/) to respond..."
+          for i in $(seq 1 30); do
+            if curl -sSf http://localhost:5000/ >/dev/null 2>&1; then
+              echo "Backend is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not start in time"
+          docker compose -f docker-compose.ci.yml logs --no-color
+          docker compose -f docker-compose.ci.yml down --volumes --remove-orphans
+          exit 1
+
+      - name: Run backend smoke test
+        run: |
+          echo "Performing HTTP smoke check against backend"
+          curl -sSf http://localhost:5000/ | tee /tmp/backend_root.json
+          echo "Response saved to /tmp/backend_root.json"
+
+      - name: Stop services after test
+        run: |
+          docker compose -f docker-compose.ci.yml down --volumes --remove-orphans
+
+  push-images:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and tag images
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          docker compose -f docker-compose.ci.yml build --parallel
+
+      - name: Push backend image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          docker push ${DOCKERHUB_USERNAME}/cricket-backend:${IMAGE_TAG}
+          docker tag ${DOCKERHUB_USERNAME}/cricket-backend:${IMAGE_TAG} ${DOCKERHUB_USERNAME}/cricket-backend:latest
+          docker push ${DOCKERHUB_USERNAME}/cricket-backend:latest
+
+      - name: Push frontend image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          docker push ${DOCKERHUB_USERNAME}/cricket-frontend:${IMAGE_TAG}
+          docker tag ${DOCKERHUB_USERNAME}/cricket-frontend:${IMAGE_TAG} ${DOCKERHUB_USERNAME}/cricket-frontend:latest
+          docker push ${DOCKERHUB_USERNAME}/cricket-frontend:latest
