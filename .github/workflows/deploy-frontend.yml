@@ -1,16 +1,20 @@
-name: Deploy Frontend to GitHub Pages
+name: Deploy Frontend to GitHub Pages (no Docker)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -18,16 +22,31 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Frontend Dependencies
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            Criconnnect/frontend/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('Criconnnect/frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
         run: npm ci
         working-directory: ./Criconnnect/frontend
 
-      - name: Build Frontend
+      - name: Build
         run: npm run build
         working-directory: ./Criconnnect/frontend
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Configure Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./Criconnnect/frontend/build
+          path: ./Criconnnect/frontend/build
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
