@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/CRIC/static/css/main.0193cbd5.css",
+    "main.js": "/CRIC/static/js/main.8b62b21f.js",
+    "index.html": "/CRIC/index.html",
+    "main.0193cbd5.css.map": "/CRIC/static/css/main.0193cbd5.css.map",
+    "main.8b62b21f.js.map": "/CRIC/static/js/main.8b62b21f.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0193cbd5.css",
+    "static/js/main.8b62b21f.js"
+  ]
+}
