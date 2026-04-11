@@ -2,41 +2,32 @@ name: Deploy Frontend to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
+    branches:
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '18'
 
-      - name: Install dependencies
+      - name: Install Frontend Dependencies
         run: npm ci
-        working-directory: ./Criconnnect/frontend
+        working-directory: ./frontend   # ⚠️ change if needed
 
-      - name: Build frontend
+      - name: Build Frontend
         run: npm run build
-        working-directory: ./Criconnnect/frontend
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v3
-
-      - name: Upload build artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: ./Criconnnect/frontend/build
+        working-directory: ./frontend
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+        uses: peaceiris/actions-gh-pages@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/build
