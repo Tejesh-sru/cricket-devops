@@ -1,87 +1,25 @@
-name: CI/CD — Build & Push Docker Images
+name: Docker Build & Push
 
 on:
   push:
-    branches: [ main ]
-
-permissions:
-  contents: read
-  packages: write
-
-env:
-  IMAGE_TAG: ${{ github.sha }}
+    branches: ["main"]
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+    # 🔐 Login to Docker Hub
+    - name: Login to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    # 🏗 Build Image
+    - name: Build Docker Image
+      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest .
 
-      - name: Log in to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build & push backend image to GHCR
-        uses: docker/build-push-action@v4
-        with:
-          context: ./Criconnnect/backend
-          file: ./Criconnnect/backend/Dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/cricket-backend:${{ env.IMAGE_TAG }}
-            ghcr.io/${{ github.repository_owner }}/cricket-backend:latest
-
-      - name: Build & push backend image to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
-        uses: docker/build-push-action@v4
-        with:
-          context: ./Criconnnect/backend
-          file: ./Criconnnect/backend/Dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/cricket-backend:${{ env.IMAGE_TAG }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/cricket-backend:latest
-
-      - name: Build & push frontend image to GHCR
-        uses: docker/build-push-action@v4
-        with:
-          context: ./Criconnnect/frontend
-          file: ./Criconnnect/frontend/Dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/cricket-frontend:${{ env.IMAGE_TAG }}
-            ghcr.io/${{ github.repository_owner }}/cricket-frontend:latest
-
-      - name: Build & push frontend image to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
-        uses: docker/build-push-action@v4
-        with:
-          context: ./Criconnnect/frontend
-          file: ./Criconnnect/frontend/Dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/cricket-frontend:${{ env.IMAGE_TAG }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/cricket-frontend:latest
-
+    # 📦 Push Image
+    - name: Push Docker Image
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
