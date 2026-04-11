@@ -20,14 +20,14 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: npm ci
-        working-directory: ./frontend   # ⚠️ update if needed
+        working-directory: ./Criconnnect/frontend
 
       - name: Build Frontend
         run: npm run build
-        working-directory: ./frontend
+        working-directory: ./Criconnnect/frontend
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3   # ✅ FIXED
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/build
+          publish_dir: ./Criconnnect/frontend/build
