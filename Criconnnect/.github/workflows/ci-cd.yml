@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_TAG: ${{github.sha}}
 
 jobs:
   build-and-push:
