@@ -1,0 +1,80 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up job
+        run: echo "Starting CI build job"
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Show repository structure
+        run: |
+          echo "Repository root"
+          ls -la
+          echo "Criconnnect tree"
+          if [ -d "Criconnnect" ]; then
+            find Criconnnect -maxdepth 3 -type d -print
+          else
+            echo "Criconnnect folder not found"
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Backend Dependencies
+        run: |
+          if [ -f "Criconnnect/backend/package.json" ]; then
+            cd Criconnnect/backend
+            npm ci
+          else
+            echo "Skipping backend install: Criconnnect/backend/package.json not found"
+          fi
+
+      - name: Run Backend Tests
+        run: |
+          if [ -f "Criconnnect/backend/package.json" ]; then
+            cd Criconnnect/backend
+            npm test --if-present
+          else
+            echo "Skipping backend tests: Criconnnect/backend/package.json not found"
+          fi
+
+      - name: Install Frontend Dependencies
+        run: |
+          if [ -f "Criconnnect/frontend/package.json" ]; then
+            cd Criconnnect/frontend
+            npm ci
+          else
+            echo "Skipping frontend install: Criconnnect/frontend/package.json not found"
+          fi
+
+      - name: Build React App
+        run: |
+          if [ -f "Criconnnect/frontend/package.json" ]; then
+            cd Criconnnect/frontend
+            npm run build --if-present
+          else
+            echo "Skipping frontend build: Criconnnect/frontend/package.json not found"
+          fi
+
+      - name: Post Setup Node
+        run: echo "Post Setup Node completed"
+
+      - name: Post Checkout Code
+        run: echo "Post Checkout Code completed"
+
+      - name: Complete job
+        run: echo "Job completed successfully"
