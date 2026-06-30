@@ -6,7 +6,7 @@ const { verifyToken } = require('../middleware/auth');
 const router = express.Router();
 
 /**
- * Authentication Routes
+ * Authentication Routes 
  */
 
 // POST: Signup
