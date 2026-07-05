@@ -8,7 +8,7 @@ import { AuthProvider } from './context/AuthContext';
 import { PlayerProvider } from './context/PlayerContext';
 
 // Components
-import Navbar from './components/Navbar';
+import Navbar from './components/Navbar'; 
 import ProtectedRoute from './components/ProtectedRoute';
  
 // Pages
