@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 // Context 
 import { AuthProvider } from './context/AuthContext';
-import { PlayerProvider } from './context/PlayerContext';
+import { PlayerProvider } from './context/PlayerContext'; 
 
 // Components
 import Navbar from './components/Navbar'; 
